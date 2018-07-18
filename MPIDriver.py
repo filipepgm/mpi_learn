@@ -24,6 +24,7 @@ if __name__ == '__main__':
     parser.add_argument('--tf', help='use tensorflow backend', action='store_true')
     parser.add_argument('--torch', help='use pytorch', action='store_true')
     parser.add_argument('--single', help='run a single process', action='store_true')
+    parser.add_argument('--thread_validation', help='run a single process', action='store_true')
     
     # model arguments
     parser.add_argument('model_json', help='JSON file containing model architecture')
@@ -163,7 +164,8 @@ if __name__ == '__main__':
                             synchronous=args.synchronous, 
                             verbose=args.verbose, monitor=args.monitor,
                             early_stopping=args.early_stopping,
-                            target_metric=args.target_metric    )
+                            target_metric=args.target_metric,
+                            thread_validation = args.thread_validation)
     else:
         manager = MPISingleManager( comm=comm, data=data, algo=algo, model_builder=model_builder,
                             num_epochs=args.epochs, train_list=train_list, val_list=val_list, 
