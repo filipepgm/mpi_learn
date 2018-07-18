@@ -552,7 +552,7 @@ class MPIWorker(MPIProcess):
         print ("MPIWorker {0} signing off".format(self.ranks))
         if self.monitor:
             self.update_monitor( self.monitor.get_stats() )        
-        self.model.close()
+        #self.model.close()
         self.send_exit_to_parent()
         self.send_history_to_parent()
         self.data.finalize()
@@ -759,7 +759,6 @@ class MPIMaster(MPIProcess):
         self.send_history_to_parent()
         self.data.finalize()
         self.stop_time = time.time()
-        self.model.close()
 
     def record_details(self, json_name=None, meta=None):
         ## for the uber master, save yourself
@@ -783,6 +782,11 @@ class MPIMaster(MPIProcess):
             out_file.write( json.dumps(out_dict, indent=4, separators=(',',': ')) )
 
         return self.histories
+
+    def cleanup(self):
+        return 
+        self.model.close()
+        self.validation_model.close()
 
     def validation_worker(self):
         """Main function of the validation thread"""
