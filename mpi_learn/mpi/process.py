@@ -387,6 +387,7 @@ class MPIProcess(object):
         self.send_arrays( self.weights, expect_tag='begin_weights', tag='weights', 
                 comm=comm, dest=dest, check_permission=check_permission )
 
+    @trace(category="MPI")
     def send_update(self, comm=None, dest=None, check_permission=False):
         if self.is_shadow():return        
         """Send update to the process specified by comm (MPI communicator) and dest (rank).
@@ -430,6 +431,7 @@ class MPIProcess(object):
             else:
                 self.recv( o, tag, comm=comm, source=source, buffer=True )
 
+    @trace(category="MPI")
     def recv_weights(self, comm=None, source=None, add_to_existing=False):
         """Receive NN weights layer by layer from the process specified by comm and source"""
         if self.is_shadow():return        
@@ -450,6 +452,7 @@ class MPIProcess(object):
         self.recv_arrays( self.update, tag='update', comm=comm, source=source,
                 add_to_existing=add_to_existing )
 
+    @trace(category="MPI")
     def recv_time_step(self, comm=None, source=None):
         """Receive the current time step"""
         if self.is_shadow():return
