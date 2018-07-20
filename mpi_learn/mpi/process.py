@@ -572,7 +572,7 @@ class MPIWorker(MPIProcess):
         self.send_history_to_parent()
         self.data.finalize()
 
-    @trace
+    @trace(category="ALGO")
     def compute_update(self):
         """Compute the update from the new and old sets of model weights"""
         self.update = self.algo.compute_update( self.weights, self.model.get_weights() )
@@ -671,6 +671,7 @@ class MPIMaster(MPIProcess):
         else:
             self.time_step += 1 
 
+    @trace
     def do_update_sequence(self, source):
         """Update procedure:
          -Compute the staleness of the update and decide whether to accept it.
@@ -900,6 +901,7 @@ class MPIMaster(MPIProcess):
         Trace.end("validation", "VALIDATION")
         return None
 
+    @trace
     def apply_update(self):
         """Updates weights according to update received from worker process"""
         if self.tell_update:

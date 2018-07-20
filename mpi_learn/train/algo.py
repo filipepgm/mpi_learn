@@ -3,6 +3,7 @@
 import numpy as np
 
 from .optimizer import get_optimizer, MultiOptimizer, OptimizerBuilder
+from .trace import Trace, trace
 
 class Algo(object):
     """The Algo class contains all information about the training algorithm.
@@ -112,6 +113,7 @@ class Algo(object):
                     update.append( np.subtract( cur_w, new_w ) )
             return update
 
+    @trace(category="ALGO")
     def set_worker_model_weights(self, model, weights):
         """Apply a new set of weights to the worker's copy of the model"""
         if self.mode == 'easgd':
