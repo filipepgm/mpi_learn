@@ -245,6 +245,7 @@ class AdaDelta(RunningAverageOptimizer):
         super(AdaDelta, self).reset()
         self.running_dx2 = None
 
+    @trace
     def apply_update(self, weights, gradient):
         """Update the running averages of gradients and weight updates,
             and compute the Adadelta update for this step."""

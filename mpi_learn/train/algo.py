@@ -142,7 +142,7 @@ class Algo(object):
         return self.step_counter % self.sync_every == 0
 
     ### For Master ###
-
+    @trace
     def apply_update(self, weights, update):
         """Calls the optimizer to apply an update
             and returns the resulting weights"""
