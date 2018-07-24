@@ -6,6 +6,7 @@ import pickle
 import os
 
 from ..utils import weights_from_shapes
+from ..train.trace import Trace, trace
 
 class Optimizer(object):
     """Base class for optimization algorithms.
@@ -55,6 +56,7 @@ class VanillaSGD(Optimizer):
         super(VanillaSGD, self).__init__()
         self.learning_rate = learning_rate
 
+    @trace
     def apply_update(self, weights, gradient):
         """Move weights in the direction of the gradient, by the amount of the 
             learning rate."""
