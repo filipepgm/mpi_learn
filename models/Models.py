@@ -145,7 +145,8 @@ def make_cifar10_model(**args):
 
 def make_cifar10_5_model(**args):
     nb_classes = 3
-    img_rows, img_cols = 32, 32
+    #img_rows, img_cols = 32, 32
+    img_rows, img_cols = 150, 94
     
     # use 1 kernel size for all convolutional layers
     ks = args.get('kernel_size', 3)
@@ -171,7 +172,7 @@ def make_cifar10_5_model(**args):
     dense2 = args.get('dense2', 256)
     
     if K.image_dim_ordering() == 'th':
-        input_shape = (3, img_rows, img_cols)
+        input_shape = (5, img_rows, img_cols)
     else:
         input_shape = (img_rows, img_cols, 5) #Modified here
     
