@@ -187,20 +187,27 @@ class Adam(RunningAverageOptimizer):
 
         self.t += 1
 
-
+        Trace.begin("running_average_numpy")
         #self.m = self.running_average( self.m, gradient )
-        self.m = [
-            ((1-self.beta_1) * update + #new_contribution
-            self.beta_1 * previous)     #old_contribution
-            for previous, update in zip(self.m, gradient)
-        ]
+
+        #self.m = [
+        #    ((1-self.beta_1) * update + #new_contribution
+        #    self.beta_1 * previous)     #old_contribution
+        #    for previous, update in zip(self.m, gradient)
+        #]
+        prev_arr = np.asarray(self.m )
+        up_arr = np.asarray(gradient )
+
+        self.m = (up_arr * (1-self.beta_1) + prev_arr * self.beta_1).tolist()
+
+        Trace.end("running_average_numpy")
 
         
         self.running_g2 = self.running_average_square( self.running_g2, gradient )
 
-        Trace.begin("running_average_short")
+        
         alpha_t = self.learning_rate * (1 - self.rho**self.t)**(0.5) / (1 - self.beta_1**self.t)
-        Trace.end("running_average_short")
+        
 
         Trace.begin("apply_for")
         new_weights = [
