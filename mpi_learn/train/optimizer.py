@@ -174,6 +174,7 @@ class Adam(RunningAverageOptimizer):
             result.append( self.running_average_np( prev, up ) )
         return result
 
+    @trace
     def apply_update(self, weights, gradient):
         """Update the running averages of the first and second moments
             of the gradient, and compute the update for this time step"""
@@ -187,6 +188,7 @@ class Adam(RunningAverageOptimizer):
         self.running_g2 = self.running_average_square( self.running_g2, gradient )
         alpha_t = self.learning_rate * (1 - self.rho**self.t)**(0.5) / (1 - self.beta_1**self.t)
         new_weights = []
+        Trace.begin("apply_for")
         for w, g, g2 in zip(weights, self.m, self.running_g2):
             try:
                 update = alpha_t * g / ( np.sqrt(g2) + self.epsilon )
@@ -230,6 +232,7 @@ class Adam(RunningAverageOptimizer):
                 
                 update = 0        
             new_weights.append( w - update )
+        Trace.end("apply_for")
         return new_weights
 
 class AdaDelta(RunningAverageOptimizer):
