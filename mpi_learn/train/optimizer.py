@@ -186,54 +186,27 @@ class Adam(RunningAverageOptimizer):
             self.m = [ np.zeros_like(g) for g in gradient ]
 
         self.t += 1
-        self.m = self.running_average( self.m, gradient )
+
+
+        #self.m = self.running_average( self.m, gradient )
+        self.m = [
+            ((1-self.beta_1) * update + #new_contribution
+            self.beta_1 * previous)     #old_contribution
+            for previous, update in zip(self.m, gradient)
+        ]
+
+        
         self.running_g2 = self.running_average_square( self.running_g2, gradient )
+
+        Trace.begin("running_average_short")
         alpha_t = self.learning_rate * (1 - self.rho**self.t)**(0.5) / (1 - self.beta_1**self.t)
-        new_weights = []
+        Trace.end("running_average_short")
+
         Trace.begin("apply_for")
-        for w, g, g2 in zip(weights, self.m, self.running_g2):
-            try:
-                update = alpha_t * g / ( np.sqrt(g2) + self.epsilon )
-            except Exception as e:
-                print ("FAILED TO MAKE A WEIGHT UPDATE due to",str(e))
-                print ("alpha_t",alpha_t)
-                print ("beta_1",self.beta_1)
-                print ("t",self.t)
-                print ("learning rate",self.learning_rate)
-                print ("rho",self.rho)
-                print ("epsilon",self.epsilon)
-                print ("min gradient",np.min( g ))
-                print ("max gradient",np.max( g ))
-                print ("min gradient 2",np.min( g2 ))
-                print ("max gradient 2",np.max( g2 ))
-                try:
-                    update = alpha_t * g / ( np.sqrt(g2) + self.epsilon )
-                    print ("a")
-                    try:
-                        new_weights.append( w - update )
-                    except:
-                        print ("no sub")
-                except:
-                    try:
-                        update = g / ( np.sqrt(g2) + self.epsilon )
-                        print ("b")
-                        print ("min b",np.min( update ))
-                        print ("max b",np.max( update ))
-                        print ("min |b|",np.min(np.fabs( update)))
-                        #update *= alpha_t
-                    except:
-                        try:
-                            update = 1./ ( np.sqrt(g2) + self.epsilon )
-                            print ("c")
-                        except:
-                            try:
-                                update = 1./ ( g2 + self.epsilon )
-                                print ("d")
-                            except:
-                                print ("e")
-                
-                update = 0        
-            new_weights.append( w - update )
+        new_weights = [
+            w - alpha_t * g / ( np.sqrt(g2) + self.epsilon )
+            for w, g, g2 in zip(weights, self.m, self.running_g2)
+        ]
         Trace.end("apply_for")
         return new_weights
 
