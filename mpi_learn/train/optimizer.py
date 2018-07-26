@@ -89,6 +89,7 @@ class RunningAverageOptimizer(Optimizer):
         self.rho = self.init_rho
         self.running_g2 = None
 
+    @trace
     def running_average_square_np(self, previous, update):
         """Computes and returns the running average of the square of a numpy array.
             previous (numpy array): value of the running average in the previous step
@@ -198,7 +199,7 @@ class Adam(RunningAverageOptimizer):
         prev_arr = np.asarray(self.m )
         up_arr = np.asarray(gradient )
 
-        self.m = (up_arr * (1-self.beta_1) + prev_arr * self.beta_1).tolist()
+        self.m = up_arr * (1-self.beta_1) + prev_arr * self.beta_1
 
         Trace.end("running_average_numpy")
 
