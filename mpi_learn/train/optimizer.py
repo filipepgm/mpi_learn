@@ -106,6 +106,7 @@ class RunningAverageOptimizer(Optimizer):
             print ("max previous",np.max(previous))
             return previous
 
+    @trace
     def running_average_square(self, previous, update):
         """Returns the running average of the square of a quantity.
             previous (list of numpy arrays): value of the running average in the previous step
@@ -166,6 +167,7 @@ class Adam(RunningAverageOptimizer):
             return previous
 
 
+    @trace
     def running_average(self, previous, update):
         """Returns the running average of the square of a quantity.
             Parameters are the same as those for running_average_square_np"""
