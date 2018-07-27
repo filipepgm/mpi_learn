@@ -5,7 +5,7 @@ import time
 
 from ..train.monitor import Monitor
 from ..utils import Error, weights_from_shapes, shapes_from_weights
-from .process import MPIWorker
+from .process import MPIWorker, MPIMaster
 
 class MPISingleWorker(MPIWorker):
     """This class trains its model with no communication to other processes"""
