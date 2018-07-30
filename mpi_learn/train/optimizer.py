@@ -104,12 +104,13 @@ class RunningAverageOptimizer(Optimizer):
         #old_contribution = self.rho * previous
         #Trace.end("rasn_3")
         #return new_contribution + old_contribution
+        print (previous.shape)
 
-        #matrix = np.concatenate((previous, np.square(update)))
-        #weights = np.array([[self.rho, 1-self.rho]])
-        #return np.matmul(weights, matrix)
         matrix = np.stack((previous, np.square(update)))
-        return np.average(matrix, axis = 0, weights = [self.rho, 1-self.rho])
+        result =  np.average(matrix, axis = 0, weights = [self.rho, 1-self.rho])
+
+        print (result.shape)
+        return result
 
 
     @trace
