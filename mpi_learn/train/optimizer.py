@@ -94,16 +94,22 @@ class RunningAverageOptimizer(Optimizer):
         """Computes and returns the running average of the square of a numpy array.
             previous (numpy array): value of the running average in the previous step
             update (numpy array): amount of the update"""
-        Trace.begin("rasn_1")
-        square = np.square(update)
-        Trace.end("rasn_1")
-        Trace.begin("rasn_2")
-        new_contribution = (1-self.rho) * square
-        Trace.end("rasn_2")
-        Trace.begin("rasn_3")
-        old_contribution = self.rho * previous
-        Trace.end("rasn_3")
-        return new_contribution + old_contribution
+        #Trace.begin("rasn_1")
+        #square = np.square(update)
+        #Trace.end("rasn_1")
+        #Trace.begin("rasn_2")
+        #new_contribution = (1-self.rho) * square
+        #Trace.end("rasn_2")
+        #Trace.begin("rasn_3")
+        #old_contribution = self.rho * previous
+        #Trace.end("rasn_3")
+        #return new_contribution + old_contribution
+
+        matrix = np.concatenate((previous, np.square(update)))
+        weights = np.array([[self.rho, 1-self.rho]])
+
+        return np.matmul(weights, matrix)
+
 
     @trace
     def running_average_square(self, previous, update):
