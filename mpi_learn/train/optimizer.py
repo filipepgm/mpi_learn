@@ -95,22 +95,22 @@ class RunningAverageOptimizer(Optimizer):
             previous (numpy array): value of the running average in the previous step
             update (numpy array): amount of the update"""
         #Trace.begin("rasn_1")
-        #square = np.square(update)
+        square = np.square(update)
         #Trace.end("rasn_1")
         #Trace.begin("rasn_2")
-        #new_contribution = (1-self.rho) * square
+        new_contribution = (1-self.rho) * square
         #Trace.end("rasn_2")
         #Trace.begin("rasn_3")
-        #old_contribution = self.rho * previous
+        old_contribution = self.rho * previous
         #Trace.end("rasn_3")
-        #return new_contribution + old_contribution
+        return new_contribution + old_contribution
         #print (previous.shape)
-
-        matrix = np.stack((previous, np.square(update)))
-        result =  np.average(matrix, axis = 0, weights = [self.rho, 1-self.rho]).astype(np.float32)
-
-        #print (result.shape)
-        return result
+#
+        #matrix = np.stack((previous, np.square(update)))
+        #result =  np.average(matrix, axis = 0, weights = [self.rho, 1-self.rho]).astype(np.float32)
+#
+        ##print (result.shape)
+        #return result
 
 
     @trace
@@ -194,21 +194,21 @@ class Adam(RunningAverageOptimizer):
 
         self.t += 1
 
-        Trace.begin("running_average_numpy")
-        #self.m = self.running_average( self.m, gradient )
+        #Trace.begin("running_average_numpy")
+        self.m = self.running_average( self.m, gradient )
 
-        self.m = [
-            ((1-self.beta_1) * update + #new_contribution
-            self.beta_1 * previous)     #old_contribution
-            for previous, update in zip(self.m, gradient)
-        ]
+        #self.m = [
+        #    ((1-self.beta_1) * update + #new_contribution
+        #    self.beta_1 * previous)     #old_contribution
+        #    for previous, update in zip(self.m, gradient)
+        #]
         
         #prev_arr = np.asarray(self.m )
         #up_arr = np.asarray(gradient )
         #
         #self.m = up_arr * (1-self.beta_1) + prev_arr * self.beta_1
 
-        Trace.end("running_average_numpy")
+        #Trace.end("running_average_numpy")
 
         
         self.running_g2 = self.running_average_square( self.running_g2, gradient )
