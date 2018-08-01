@@ -4,6 +4,7 @@ from mpi_learn.utils import load_model, get_device_name
 from .optimizer import OptimizerBuilder
 import numpy as np
 import copy
+from ..train.trace import Trace, trace
 
 class MPIModel(object):
     """Class that abstract all details of the model
@@ -64,7 +65,8 @@ class MPIModel(object):
                 for m,v in it.items():
                     arg_hist.setdefault(m_name,{}).setdefault(m,[]).append(v)
         self.histories = arg_hist
-                       
+
+    @trace        
     def format_update(self):
         if self.model:
             return [ np.zeros( w.shape, dtype=np.float32 ) for w in self.model.get_weights() ]

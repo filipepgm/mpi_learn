@@ -376,6 +376,7 @@ class MPIProcess(object):
             else:
                 self.send( o, tag, comm=comm, dest=dest, buffer=True )
 
+    @trace
     def send_weights(self, comm=None, dest=None, check_permission=False):
         if self.is_shadow():return        
         """Send NN weights to the process specified by comm (MPI communicator) and dest (rank).
@@ -397,6 +398,7 @@ class MPIProcess(object):
         self.send_arrays( self.update, expect_tag='begin_update', tag='update', 
                 comm=comm, dest=dest, check_permission=check_permission )
 
+    @trace
     def send_time_step(self, comm=None, dest=None):
         if self.is_shadow():return        
         """Send the current time step"""
