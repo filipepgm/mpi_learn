@@ -386,6 +386,7 @@ class MPIProcess(object):
         self.send_arrays( self.weights, expect_tag='begin_weights', tag='weights', 
                 comm=comm, dest=dest, check_permission=check_permission )
 
+    @trace
     def send_update(self, comm=None, dest=None, check_permission=False):
         if self.is_shadow():return        
         """Send update to the process specified by comm (MPI communicator) and dest (rank).
@@ -429,6 +430,7 @@ class MPIProcess(object):
             else:
                 self.recv( o, tag, comm=comm, source=source, buffer=True )
 
+    @trace
     def recv_weights(self, comm=None, source=None, add_to_existing=False):
         """Receive NN weights layer by layer from the process specified by comm and source"""
         if self.is_shadow():return        
@@ -449,6 +451,7 @@ class MPIProcess(object):
         self.recv_arrays( self.update, tag='update', comm=comm, source=source,
                 add_to_existing=add_to_existing )
 
+    @trace
     def recv_time_step(self, comm=None, source=None):
         """Receive the current time step"""
         if self.is_shadow():return
@@ -657,6 +660,7 @@ class MPIMaster(MPIProcess):
         else:
             self.time_step += 1 
 
+    @trace
     def do_update_sequence(self, source):
         """Update procedure:
          -Compute the staleness of the update and decide whether to accept it.
@@ -696,7 +700,7 @@ class MPIMaster(MPIProcess):
         #self.histories[key] = self.recv_history_from_child(worker_id)
         self.running_workers.remove(worker_id)
         self.num_sync_workers -= 1
-
+    
     def process_message(self, status):
         """Extracts message source and tag from the MPI status object and processes the message. 
             Returns the tag of the message received.

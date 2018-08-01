@@ -1,6 +1,7 @@
 ### Algo class
 
 import numpy as np
+from ..train.trace import Trace, trace
 
 from .optimizer import get_optimizer, MultiOptimizer, OptimizerBuilder
 
@@ -112,6 +113,7 @@ class Algo(object):
                     update.append( np.subtract( cur_w, new_w ) )
             return update
 
+    @trace
     def set_worker_model_weights(self, model, weights):
         """Apply a new set of weights to the worker's copy of the model"""
         if self.mode == 'easgd':
