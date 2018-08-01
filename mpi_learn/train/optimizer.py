@@ -1,11 +1,13 @@
 ### Optimizers used to update master process weights
 
 import numpy as np
+import numexpr as ne
 import copy
 import pickle
 import os
 
 from ..utils import weights_from_shapes
+from ..train.trace import Trace, trace
 
 class Optimizer(object):
     """Base class for optimization algorithms.
@@ -50,13 +52,14 @@ class MultiOptimizer(Optimizer):
 class VanillaSGD(Optimizer):
     """Stochastic gradient descent with no extra frills.
           learning_rate: learning rate parameter for SGD"""
-    
+
     def __init__(self, learning_rate=0.01):
         super(VanillaSGD, self).__init__()
         self.learning_rate = learning_rate
 
+    @trace
     def apply_update(self, weights, gradient):
-        """Move weights in the direction of the gradient, by the amount of the 
+        """Move weights in the direction of the gradient, by the amount of the
             learning rate."""
         new_weights = []
         for w, g in zip(weights, gradient):
@@ -87,23 +90,33 @@ class RunningAverageOptimizer(Optimizer):
         self.rho = self.init_rho
         self.running_g2 = None
 
+    @trace
     def running_average_square_np(self, previous, update):
         """Computes and returns the running average of the square of a numpy array.
             previous (numpy array): value of the running average in the previous step
             update (numpy array): amount of the update"""
-        try:
-            new_contribution = (1-self.rho) * np.square(update)
-            old_contribution = self.rho * previous
-            return new_contribution + old_contribution
-        except Exception as e:
-            print ("FAILED TO COMPUTE THE RUNNING AVG SQUARE due to",str(e))
-            print ("rho",self.rho)
-            print ("min update",np.min(update))
-            print ("max update",np.max(update))
-            print ("min previous",np.min(previous))
-            print ("max previous",np.max(previous))
-            return previous
+#        #Trace.begin("rasn_1")
+#        square = np.square(update)
+#        #Trace.end("rasn_1")
+#        #Trace.begin("rasn_2")
+#        new_contribution = (1-self.rho) * square
+#        #Trace.end("rasn_2")
+#        #Trace.begin("rasn_3")
+#        old_contribution = self.rho * previous
+#        #Trace.end("rasn_3")
+#        return new_contribution + old_contribution
+        rho = previous.dtype.type(self.rho)
+        return ne.evaluate("(1-rho) * update * update + rho * previous")
+        #print (previous.shape)
+#
+        #matrix = np.stack((previous, np.square(update)))
+        #result =  np.average(matrix, axis = 0, weights = [self.rho, 1-self.rho]).astype(np.float32)
+#
+        ##print (result.shape)
+        #return result
 
+
+    @trace
     def running_average_square(self, previous, update):
         """Returns the running average of the square of a quantity.
             previous (list of numpy arrays): value of the running average in the previous step
@@ -123,7 +136,7 @@ class RunningAverageOptimizer(Optimizer):
 
 class Adam(RunningAverageOptimizer):
     """Adam optimizer.
-        Note that the beta_2 parameter is stored internally as 'rho' 
+        Note that the beta_2 parameter is stored internally as 'rho'
         and "v" in the algorithm is called "running_g2"
         for consistency with the other running-average optimizers
         Attributes:
@@ -151,9 +164,12 @@ class Adam(RunningAverageOptimizer):
         """Computes and returns the running average of a numpy array.
             Parameters are the same as those for running_average_square_np"""
         try:
-            new_contribution = (1-self.beta_1) * update
-            old_contribution = self.beta_1 * previous
-            return new_contribution + old_contribution
+            #new_contribution = (1-self.beta_1) * update
+            #old_contribution = self.beta_1 * previous
+            #return new_contribution + old_contribution
+
+            beta = previous.dtype.type(self.beta_1)
+            return ne.evaluate("(1-beta) * update + beta * previous")
         except Exception as e:
             print ("FAILED TO UPDATE THE RUNNING AVERAGE due to",str(e))
             print ("beta_1",self.beta_1)
@@ -164,6 +180,7 @@ class Adam(RunningAverageOptimizer):
             return previous
 
 
+    @trace
     def running_average(self, previous, update):
         """Returns the running average of the square of a quantity.
             Parameters are the same as those for running_average_square_np"""
@@ -172,6 +189,7 @@ class Adam(RunningAverageOptimizer):
             result.append( self.running_average_np( prev, up ) )
         return result
 
+    @trace
     def apply_update(self, weights, gradient):
         """Update the running averages of the first and second moments
             of the gradient, and compute the update for this time step"""
@@ -181,53 +199,41 @@ class Adam(RunningAverageOptimizer):
             self.m = [ np.zeros_like(g) for g in gradient ]
 
         self.t += 1
+
+        #Trace.begin("running_average_numpy")
         self.m = self.running_average( self.m, gradient )
+
+        #self.m = [
+        #    ((1-self.beta_1) * update + #new_contribution
+        #    self.beta_1 * previous)     #old_contribution
+        #    for previous, update in zip(self.m, gradient)
+        #]
+
+        #prev_arr = np.asarray(self.m )
+        #up_arr = np.asarray(gradient )
+        #
+        #self.m = up_arr * (1-self.beta_1) + prev_arr * self.beta_1
+
+        #Trace.end("running_average_numpy")
+
+
         self.running_g2 = self.running_average_square( self.running_g2, gradient )
+
+
         alpha_t = self.learning_rate * (1 - self.rho**self.t)**(0.5) / (1 - self.beta_1**self.t)
+
+
+        Trace.begin("apply_for")
         new_weights = []
+        eps = np.dtype("float32").type(self.epsilon)
+        alpha = np.dtype("float32").type(alpha_t)
         for w, g, g2 in zip(weights, self.m, self.running_g2):
-            try:
-                update = alpha_t * g / ( np.sqrt(g2) + self.epsilon )
-            except Exception as e:
-                print ("FAILED TO MAKE A WEIGHT UPDATE due to",str(e))
-                print ("alpha_t",alpha_t)
-                print ("beta_1",self.beta_1)
-                print ("t",self.t)
-                print ("learning rate",self.learning_rate)
-                print ("rho",self.rho)
-                print ("epsilon",self.epsilon)
-                print ("min gradient",np.min( g ))
-                print ("max gradient",np.max( g ))
-                print ("min gradient 2",np.min( g2 ))
-                print ("max gradient 2",np.max( g2 ))
-                try:
-                    update = alpha_t * g / ( np.sqrt(g2) + self.epsilon )
-                    print ("a")
-                    try:
-                        new_weights.append( w - update )
-                    except:
-                        print ("no sub")
-                except:
-                    try:
-                        update = g / ( np.sqrt(g2) + self.epsilon )
-                        print ("b")
-                        print ("min b",np.min( update ))
-                        print ("max b",np.max( update ))
-                        print ("min |b|",np.min(np.fabs( update)))
-                        #update *= alpha_t
-                    except:
-                        try:
-                            update = 1./ ( np.sqrt(g2) + self.epsilon )
-                            print ("c")
-                        except:
-                            try:
-                                update = 1./ ( g2 + self.epsilon )
-                                print ("d")
-                            except:
-                                print ("e")
-                
-                update = 0        
-            new_weights.append( w - update )
+            new_weights.append(ne.evaluate("w - alpha * g / (sqrt(g2) + eps)"))
+        #new_weights = [
+        #    w - alpha_t * g / ( np.sqrt(g2) + self.epsilon )
+        #    for w, g, g2 in zip(weights, self.m, self.running_g2)
+        #]
+        Trace.end("apply_for")
         return new_weights
 
 class AdaDelta(RunningAverageOptimizer):
@@ -243,6 +249,7 @@ class AdaDelta(RunningAverageOptimizer):
         super(AdaDelta, self).reset()
         self.running_dx2 = None
 
+    @trace
     def apply_update(self, weights, gradient):
         """Update the running averages of gradients and weight updates,
             and compute the Adadelta update for this step."""
