@@ -187,6 +187,12 @@ class Adam(RunningAverageOptimizer):
         result = []
         for prev, up in zip(previous, update):
             result.append( self.running_average_np( prev, up ) )
+            print("====================================")
+            print (prev.shape)
+            print (up.shape)
+            print (prev.dtype)
+            print (up.dtype)
+            print("====================================")
         return result
 
     @trace
