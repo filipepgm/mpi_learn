@@ -5,6 +5,7 @@ import numexpr as ne
 import copy
 import pickle
 import os
+import tensorflow as tf
 
 from ..utils import weights_from_shapes
 from ..train.trace import Trace, trace
@@ -105,8 +106,19 @@ class RunningAverageOptimizer(Optimizer):
 #        old_contribution = self.rho * previous
 #        #Trace.end("rasn_3")
 #        return new_contribution + old_contribution
-        rho = previous.dtype.type(self.rho)
-        return ne.evaluate("(1-rho) * update * update + rho * previous")
+        
+        #rho = previous.dtype.type(self.rho)
+        #return ne.evaluate("(1-rho) * update * update + rho * previous")
+
+        rho = tf.Variable(self.rho, tf.float32)
+        rho_sym = tf.Variable(1-self.rho, tf.float32)
+
+        square = tf.tensordot(update, update, 1)
+        new_contribution = tf.scalar_mul(rho_sym, square)
+        old_contribution = tf.scalar_mul(rho, previous)
+
+        return new_contribution + old_contribution
+
         #print (previous.shape)
 #
         #matrix = np.stack((previous, np.square(update)))
@@ -187,12 +199,6 @@ class Adam(RunningAverageOptimizer):
         result = []
         for prev, up in zip(previous, update):
             result.append( self.running_average_np( prev, up ) )
-            print("====================================")
-            print (prev.shape)
-            print (up.shape)
-            print (prev.dtype)
-            print (up.dtype)
-            print("====================================")
         return result
 
     @trace
@@ -200,20 +206,27 @@ class Adam(RunningAverageOptimizer):
         """Update the running averages of the first and second moments
             of the gradient, and compute the update for this time step"""
         if self.running_g2 is None:
-            self.running_g2 = [ np.zeros_like(g) for g in gradient ]
+            self.running_g2 = [ tf.Variable(np.zeros_like(g), tf.float32) for g in gradient ]
         if self.m is None:
-            self.m = [ np.zeros_like(g) for g in gradient ]
+            self.m = [ tf.Variable(np.zeros_like(g), tf.float32) for g in gradient ]
 
         self.t += 1
 
         #Trace.begin("running_average_numpy")
-        self.m = self.running_average( self.m, gradient )
+        #self.m = self.running_average( self.m, gradient )
 
-        #self.m = [
-        #    ((1-self.beta_1) * update + #new_contribution
-        #    self.beta_1 * previous)     #old_contribution
-        #    for previous, update in zip(self.m, gradient)
-        #]
+        beta_1 = tf.Variable(self.beta_1, tf.float32)
+        beta_1_sym = tf.Variable(1-self.beta_1, tf.float32)
+
+        self.m = [
+            tf.tensordot(
+                tf.scalar_mul(beta_1_sym, update),
+                tf.scalar_mul(beta_1, previous),
+                1)
+            #((1-self.beta_1) * update + #new_contribution
+            #self.beta_1 * previous)     #old_contribution
+            for previous, update in zip(self.m, gradient)
+        ]
 
         #prev_arr = np.asarray(self.m )
         #up_arr = np.asarray(gradient )
@@ -230,15 +243,19 @@ class Adam(RunningAverageOptimizer):
 
 
         Trace.begin("apply_for")
-        new_weights = []
-        eps = np.dtype("float32").type(self.epsilon)
-        alpha = np.dtype("float32").type(alpha_t)
-        for w, g, g2 in zip(weights, self.m, self.running_g2):
-            new_weights.append(ne.evaluate("w - alpha * g / (sqrt(g2) + eps)"))
-        #new_weights = [
-        #    w - alpha_t * g / ( np.sqrt(g2) + self.epsilon )
-        #    for w, g, g2 in zip(weights, self.m, self.running_g2)
-        #]
+        #new_weights = []
+        #eps = np.dtype("float32").type(self.epsilon)
+        #alpha = np.dtype("float32").type(alpha_t)
+        #for w, g, g2 in zip(weights, self.m, self.running_g2):
+        #    new_weights.append(ne.evaluate("w - alpha * g / (sqrt(g2) + eps)"))
+
+        epsilon = tf.Variable(self.epsilon, tf.float32)
+        alpha_t = tf.Variable(alpha_t, tf.float32)
+        
+        new_weights = [
+            w - alpha_t * g / ( tf.tensordot(g2, g2, 1) + epsilon )
+            for w, g, g2 in zip(weights, self.m, self.running_g2)
+        ]
         Trace.end("apply_for")
         return new_weights
 
