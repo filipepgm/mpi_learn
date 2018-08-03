@@ -210,6 +210,9 @@ class Adam(RunningAverageOptimizer):
         if self.m is None:
             self.m = [ tf.Variable(np.zeros_like(g), tf.float32) for g in gradient ]
 
+        gradient = [ tf.Variable(g) for g in gradient ]
+        weights = [ tf.Variable(g) for w in weights ]
+
         self.t += 1
 
         #Trace.begin("running_average_numpy")
