@@ -254,7 +254,7 @@ class Adam(RunningAverageOptimizer):
         
         with tf.Session() as sess:
             new_weights = [
-                sess.run(w - alpha_t * g / ( tf.tensordot(g2, g2, 1) + epsilon ))
+                sess.run(w - alpha_t * g / ( tf.square(g2) + epsilon ))
                 for w, g, g2 in zip(weights, self.m, self.running_g2)
             ]
         
