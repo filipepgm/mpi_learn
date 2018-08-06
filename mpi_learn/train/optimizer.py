@@ -258,8 +258,8 @@ class Adam(RunningAverageOptimizer):
                 for w, g, g2 in zip(weights, self.m, self.running_g2)
             ]
         
-            self.m = [tf.constant(e, dtype=tf.float32) for e in self.m]
-            self.running_g2 = [tf.constant(e, dtype=tf.float32) for e in self.running_g2]
+            self.m = [tf.constant(sess.run(e), dtype=tf.float32) for e in self.m]
+            self.running_g2 = [tf.constant(sess.run(e), dtype=tf.float32) for e in self.running_g2]
 
         Trace.end("apply_for")
         print ("another one")
