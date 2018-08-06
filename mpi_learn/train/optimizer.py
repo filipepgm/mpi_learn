@@ -222,10 +222,7 @@ class Adam(RunningAverageOptimizer):
         beta_1_sym = tf.constant(1-self.beta_1, dtype=tf.float32)
 
         self.m = [
-            tf.tensordot(
-                tf.scalar_mul(beta_1_sym, update),
-                tf.scalar_mul(beta_1, previous),
-                1)
+            tf.scalar_mul(beta_1_sym, update) + tf.scalar_mul(beta_1, previous)
             #((1-self.beta_1) * update + #new_contribution
             #self.beta_1 * previous)     #old_contribution
             for previous, update in zip(self.m, gradient)
