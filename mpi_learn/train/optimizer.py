@@ -113,7 +113,7 @@ class RunningAverageOptimizer(Optimizer):
         rho = tf.constant(self.rho, dtype=tf.float32)
         rho_sym = tf.constant(1-self.rho, dtype=tf.float32)
 
-        square = tf.tensordot(update, update, 1)
+        square = tf.square(update)
         new_contribution = tf.scalar_mul(rho_sym, square)
         old_contribution = tf.scalar_mul(rho, previous)
 
