@@ -110,8 +110,8 @@ class RunningAverageOptimizer(Optimizer):
         #rho = previous.dtype.type(self.rho)
         #return ne.evaluate("(1-rho) * update * update + rho * previous")
 
-        rho = tf.Variable(self.rho, dtype=tf.float32)
-        rho_sym = tf.Variable(1-self.rho, dtype=tf.float32)
+        rho = tf.constant(self.rho, dtype=tf.float32)
+        rho_sym = tf.constant(1-self.rho, dtype=tf.float32)
 
         square = tf.tensordot(update, update, 1)
         new_contribution = tf.scalar_mul(rho_sym, square)
@@ -206,20 +206,20 @@ class Adam(RunningAverageOptimizer):
         """Update the running averages of the first and second moments
             of the gradient, and compute the update for this time step"""
         if self.running_g2 is None:
-            self.running_g2 = [ tf.Variable(np.zeros_like(g), dtype=tf.float32) for g in gradient ]
+            self.running_g2 = [ tf.constant(np.zeros_like(g), dtype=tf.float32) for g in gradient ]
         if self.m is None:
-            self.m = [ tf.Variable(np.zeros_like(g), dtype=tf.float32) for g in gradient ]
+            self.m = [ tf.constant(np.zeros_like(g), dtype=tf.float32) for g in gradient ]
 
-        gradient = [ tf.Variable(g) for g in gradient ]
-        weights = [ tf.Variable(w) for w in weights ]
+        gradient = [ tf.constant(g, dtype=tf.float32) for g in gradient ]
+        weights = [ tf.constant(w, dtype=tf.float32) for w in weights ]
 
         self.t += 1
 
         #Trace.begin("running_average_numpy")
         #self.m = self.running_average( self.m, gradient )
 
-        beta_1 = tf.Variable(self.beta_1, dtype=tf.float32)
-        beta_1_sym = tf.Variable(1-self.beta_1, dtype=tf.float32)
+        beta_1 = tf.constant(self.beta_1, dtype=tf.float32)
+        beta_1_sym = tf.constant(1-self.beta_1, dtype=tf.float32)
 
         self.m = [
             tf.tensordot(
@@ -252,8 +252,8 @@ class Adam(RunningAverageOptimizer):
         #for w, g, g2 in zip(weights, self.m, self.running_g2):
         #    new_weights.append(ne.evaluate("w - alpha * g / (sqrt(g2) + eps)"))
 
-        epsilon = tf.Variable(self.epsilon, dtype=tf.float32)
-        alpha_t = tf.Variable(alpha_t, dtype=tf.float32)
+        epsilon = tf.constant(self.epsilon, dtype=tf.float32)
+        alpha_t = tf.constant(alpha_t, dtype=tf.float32)
         
         with tf.Session() as sess:
             new_weights = [
