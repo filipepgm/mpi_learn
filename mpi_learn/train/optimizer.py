@@ -255,10 +255,11 @@ class Adam(RunningAverageOptimizer):
         epsilon = tf.Variable(self.epsilon, dtype=tf.float32)
         alpha_t = tf.Variable(alpha_t, dtype=tf.float32)
         
-        new_weights = [
-            w - alpha_t * g / ( tf.tensordot(g2, g2, 1) + epsilon )
-            for w, g, g2 in zip(weights, self.m, self.running_g2)
-        ]
+        with tf.Session() as sess:
+            new_weights = [
+                sess.run(w - alpha_t * g / ( tf.tensordot(g2, g2, 1) + epsilon ))
+                for w, g, g2 in zip(weights, self.m, self.running_g2)
+            ]
         Trace.end("apply_for")
         return new_weights
 
