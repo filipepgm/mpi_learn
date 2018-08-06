@@ -257,7 +257,12 @@ class Adam(RunningAverageOptimizer):
                 sess.run(w - alpha_t * g / ( tf.tensordot(g2, g2, 1) + epsilon ))
                 for w, g, g2 in zip(weights, self.m, self.running_g2)
             ]
+        
+            self.m = [tf.constant(e, dtype=tf.float32) for e in self.m]
+            self.running_g2 = [tf.constant(e, dtype=tf.float32) for e in self.running_g2]
+
         Trace.end("apply_for")
+        print ("another one")
         return new_weights
 
 class AdaDelta(RunningAverageOptimizer):
