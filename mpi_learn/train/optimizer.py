@@ -232,13 +232,19 @@ class Adam(RunningAverageOptimizer):
             self.sess.run([v.initializer for v in self.running_g2]+[v.initializer for v in self.m])
             self.do_reset = False
         #update vars
-        gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient,gradient)}
-        self.sess.run(self.update_op_g2+self.update_op_m, feed_dict=gradient_dict)
 
+        gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient,gradient)}
         weights_dict = {placeholder: value for placeholder, value in zip(self.weights,weights)}
-        weights_dict[self.t_ph] = self.t
+
+        overall_dict = {self.t_ph: self.t, **gradient_dict, **weights_dict}
+
+
+        self.sess.run(self.update_op_g2+self.update_op_m, feed_dict=overall_dict)
+
+        
+        
         self.t+=1
-        return self.sess.run(self.new_weights, feed_dict=weights_dict)
+        return self.sess.run(self.new_weights, feed_dict=overall_dict)
 
 
 class AdaDelta(RunningAverageOptimizer):
