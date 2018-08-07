@@ -265,6 +265,98 @@ class Adam(RunningAverageOptimizer):
         print ("another one")
         return new_weights
 
+class AdamTF(RunningAverageOptimizer):
+    """Adam optimizer.
+        Note that the beta_2 parameter is stored internally as 'rho'
+        and "v" in the algorithm is called "running_g2"
+        for consistency with the other running-average optimizers
+        Attributes:
+          learning_rate: base learning rate
+          beta_1: decay rate for the first moment estimate
+          m: running average of the first moment of the gradient
+          t: time step
+        """
+
+    def __init__(self, learning_rate=0.001, beta_1=0.9, beta_2=0.999,
+            epsilon=1e-8):
+        super(Adam, self).__init__(rho=beta_2, epsilon=epsilon)
+        self.sess = tf.Session()
+        self.init_learning_rate = learning_rate
+        self.init_beta_1 = beta_1
+        self.reset()
+
+    def reset(self):
+        super(Adam, self).reset()
+        self.beta_1 = self.init_beta_1
+        self.learning_rate = self.init_learning_rate
+        self.t = 0
+        self.sess.run([self.running_g2.initializer,self.m.initializer])
+
+    def setup_running_average_square_np(self, previous, update, rho, rho_sym):
+        """Computes and returns the running average of the square of a numpy array.
+            previous (numpy array): value of the running average in the previous step
+            update (numpy array): amount of the update"""
+        square = tf.square(update)
+        new_contribution = tf.scalar_mul(rho_sym, square)
+        old_contribution = tf.scalar_mul(rho, previous)
+
+        return new_contribution + old_contribution
+
+    def setup_update_graph(self, weights_shape):
+        self.weights = tf.placeholder(tf.float32, shape=weights_shape)
+        self.gradient = tf.placeholder(tf.float32, shape=weights_shape)
+
+        self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in self.weights ]
+        self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in self.weights ]
+
+        beta_1 = tf.constant(self.beta_1, dtype=tf.float32)
+        beta_1_sym = tf.constant(1-self.beta_1, dtype=tf.float32)
+
+        updated_m = [
+            tf.scalar_mul(beta_1_sym, update) + tf.scalar_mul(beta_1, previous)
+            for previous, update in zip(self.m, self.gradient)
+        ]
+
+        self.update_op_m = [
+            var.assign(updated)  for var, updated in zip(self.m, updated_m)
+        ]
+
+        #######################################
+
+        rho = tf.constant(self.rho, dtype=tf.float32)
+        rho_sym = tf.constant(1-self.rho, dtype=tf.float32)
+
+        updated_running_g2 = [
+            self.setup_running_average_square_np(old, new, rho, rho_sym)
+            for old, new in zip(self.running_g2, self.gradient)
+        ]
+
+        self.update_op_g2 = [
+            var.assign(updated)  for var, updated in zip(self.running_g2, updated_running_g2)
+        ]
+        #######################################
+
+        self.t_ph = tf.placeholder(tf.float32, shape=())
+
+        alpha_t = self.learning_rate * (1 - self.rho**self.t_ph)**(0.5) / (1 - self.beta_1**self.t_ph)
+
+        self.new_weights = [
+            w - alpha_t * g / ( tf.square(g2) + self.epsilon )
+            for w, g, g2 in zip(self.weights, updated_m, updated_running_g2)
+        ]
+
+    @trace
+    def apply_update(self, weights, gradient):
+        #update vars
+        gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient,gradient)}
+        self.sess.run(self.update_op_g2+self.update_op_m, feed_dict=gradient_dict)
+
+        weights_dict = {placeholder: value for placeholder, value in zip(self.weights,weights)}
+        weights_dict[self.t_ph] = self.t
+        self.t+=1
+        return self.sess.run(self.new_weights, feed_dict=weights_dict)
+
+
 class AdaDelta(RunningAverageOptimizer):
     """ADADELTA adaptive learning rate method.
         running_dx2: running average of squared parameter updates
