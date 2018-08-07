@@ -27,7 +27,7 @@ class Optimizer(object):
         if fn is None:
             fn = 'master-opt-{}.algo'.format( os.getpid())
         d= open(fn,'wb')
-        pickle.dump(self, d)
+        #pickle.dump(self, d) #FIXME re enable
         d.close()
 
     def load(self, fn = 'algo_.pkl'):
