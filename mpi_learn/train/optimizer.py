@@ -184,8 +184,10 @@ class Adam(RunningAverageOptimizer):
 
     @trace
     def setup_update_graph(self, weights_input):
-        self.weights = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
+        #self.weights = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
         self.gradient = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
+
+        self.weights = [ tf.Variable(w, dtype=tf.float32) for w in weights_input ]
 
         self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in weights_input ]
         self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in weights_input ]
@@ -219,6 +221,10 @@ class Adam(RunningAverageOptimizer):
             for w, g, g2 in zip(self.weights, updated_m, updated_running_g2)
         ]
 
+        self.apply_weights = [
+            var.assign(updated)  for var, updated in zip(self.weights, self.new_weights)
+        ]
+
     @trace
     def apply_update(self, weights, gradient):
         if self.do_reset:
@@ -229,13 +235,13 @@ class Adam(RunningAverageOptimizer):
 
         Trace.begin("feed_dict")
         gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient,gradient)}
-        weights_dict = {placeholder: value for placeholder, value in zip(self.weights,weights)}
+        #weights_dict = {placeholder: value for placeholder, value in zip(self.weights,weights)}
 
-        overall_dict = {self.t_ph: self.t, **gradient_dict, **weights_dict}
+        overall_dict = {self.t_ph: self.t, **gradient_dict}
         Trace.end("feed_dict")
 
         Trace.begin("update_vars")
-        res = self.sess.run(self.update_op_g2+self.update_op_m + self.new_weights, feed_dict=overall_dict)[-len(weights):]
+        res = self.sess.run(self.update_op_g2+self.update_op_m + self.apply_weights, feed_dict=overall_dict)[-len(weights):]
         Trace.end("update_vars")
         
         self.t+=1
