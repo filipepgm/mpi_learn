@@ -172,13 +172,13 @@ class Adam(RunningAverageOptimizer):
         self.t = 0
         self.do_reset = True
 
-    def setup_running_average_square_np(self, previous, update, rho, rho_sym):
+    def setup_running_average_square_np(self, previous, update):
         """Computes and returns the running average of the square of a numpy array.
             previous (numpy array): value of the running average in the previous step
             update (numpy array): amount of the update"""
         square = tf.square(update)
-        new_contribution = tf.scalar_mul(rho_sym, square)
-        old_contribution = tf.scalar_mul(rho, previous)
+        new_contribution = tf.scalar_mul(1-self.rho, square)
+        old_contribution = tf.scalar_mul(self.rho, previous)
 
         return new_contribution + old_contribution
 
@@ -190,11 +190,8 @@ class Adam(RunningAverageOptimizer):
         self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in weights_input ]
         self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in weights_input ]
 
-        beta_1 = tf.constant(self.beta_1, dtype=tf.float32)
-        beta_1_sym = tf.constant(1-self.beta_1, dtype=tf.float32)
-
         updated_m = [
-            tf.scalar_mul(beta_1_sym, update) + tf.scalar_mul(beta_1, previous)
+            tf.scalar_mul(1-self.beta_1, update) + tf.scalar_mul(self.beta_1, previous)
             for previous, update in zip(self.m, self.gradient)
         ]
 
@@ -203,12 +200,8 @@ class Adam(RunningAverageOptimizer):
         ]
 
         #######################################
-
-        rho = tf.constant(self.rho, dtype=tf.float32)
-        rho_sym = tf.constant(1-self.rho, dtype=tf.float32)
-
         updated_running_g2 = [
-            self.setup_running_average_square_np(old, new, rho, rho_sym)
+            self.setup_running_average_square_np(old, new)
             for old, new in zip(self.running_g2, self.gradient)
         ]
 
