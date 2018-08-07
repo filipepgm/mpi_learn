@@ -229,7 +229,7 @@ class Adam(RunningAverageOptimizer):
     def apply_update(self, weights, gradient):
         if self.do_reset:
             self.setup_update_graph(weights)
-            self.sess.run([v.initializer for v in self.running_g2]+[v.initializer for v in self.m])
+            self.sess.run([v.initializer for v in self.running_g2]+[v.initializer for v in self.m]+[v.initializer for v in self.weights])
             self.do_reset = False
         #update vars
 
