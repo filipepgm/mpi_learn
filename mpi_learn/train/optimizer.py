@@ -163,6 +163,7 @@ class Adam(RunningAverageOptimizer):
         self.sess = tf.Session()
         self.init_learning_rate = learning_rate
         self.init_beta_1 = beta_1
+        self.setup_update_graph()
         self.reset()
 
     def reset(self):
@@ -182,9 +183,9 @@ class Adam(RunningAverageOptimizer):
 
         return new_contribution + old_contribution
 
-    def setup_update_graph(self, weights_shape):
-        self.weights = tf.placeholder(tf.float32, shape=weights_shape)
-        self.gradient = tf.placeholder(tf.float32, shape=weights_shape)
+    def setup_update_graph(self):
+        self.weights = tf.placeholder(tf.float32)
+        self.gradient = tf.placeholder(tf.float32)
 
         self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in self.weights ]
         self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in self.weights ]
