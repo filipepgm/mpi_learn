@@ -246,7 +246,10 @@ class Adam(RunningAverageOptimizer):
         Trace.end("update_vars")
         
         self.t+=1
-        return self.sess.run(self.new_weights, feed_dict=overall_dict)
+        Trace.begin("get new weights")
+        res = self.sess.run(self.new_weights, feed_dict=overall_dict)
+        Trace.end("get new weights")
+        return res
 
 
 class AdaDelta(RunningAverageOptimizer):
