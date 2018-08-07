@@ -182,6 +182,7 @@ class Adam(RunningAverageOptimizer):
 
         return new_contribution + old_contribution
 
+    @trace
     def setup_update_graph(self, weights_input):
         self.weights = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
         self.gradient = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
@@ -233,15 +234,16 @@ class Adam(RunningAverageOptimizer):
             self.do_reset = False
         #update vars
 
+        Trace.begin("feed_dict")
         gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient,gradient)}
         weights_dict = {placeholder: value for placeholder, value in zip(self.weights,weights)}
 
         overall_dict = {self.t_ph: self.t, **gradient_dict, **weights_dict}
+        Trace.end("feed_dict")
 
-
+        Trace.begin("update_vars")
         self.sess.run(self.update_op_g2+self.update_op_m, feed_dict=overall_dict)
-
-        
+        Trace.end("update_vars")
         
         self.t+=1
         return self.sess.run(self.new_weights, feed_dict=overall_dict)
