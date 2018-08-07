@@ -186,8 +186,8 @@ class Adam(RunningAverageOptimizer):
         self.weights = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
         self.gradient = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
 
-        self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in self.weights ]
-        self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in self.weights ]
+        self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in weights_input ]
+        self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in weights_input ]
 
         beta_1 = tf.constant(self.beta_1, dtype=tf.float32)
         beta_1_sym = tf.constant(1-self.beta_1, dtype=tf.float32)
