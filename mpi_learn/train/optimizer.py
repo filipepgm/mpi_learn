@@ -163,7 +163,6 @@ class Adam(RunningAverageOptimizer):
         self.sess = tf.Session()
         self.init_learning_rate = learning_rate
         self.init_beta_1 = beta_1
-        self.setup_update_graph()
         self.reset()
 
     def reset(self):
@@ -171,7 +170,7 @@ class Adam(RunningAverageOptimizer):
         self.beta_1 = self.init_beta_1
         self.learning_rate = self.init_learning_rate
         self.t = 0
-        self.sess.run([self.running_g2.initializer,self.m.initializer])
+        self.do_reset = True
 
     def setup_running_average_square_np(self, previous, update, rho, rho_sym):
         """Computes and returns the running average of the square of a numpy array.
@@ -183,9 +182,9 @@ class Adam(RunningAverageOptimizer):
 
         return new_contribution + old_contribution
 
-    def setup_update_graph(self):
-        self.weights = tf.placeholder(tf.float32)
-        self.gradient = tf.placeholder(tf.float32)
+    def setup_update_graph(self, weights_input):
+        self.weights = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
+        self.gradient = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
 
         self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in self.weights ]
         self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in self.weights ]
@@ -228,6 +227,10 @@ class Adam(RunningAverageOptimizer):
 
     @trace
     def apply_update(self, weights, gradient):
+        if self.do_reset:
+            self.setup_update_graph(weights)
+            self.sess.run([self.running_g2.initializer,self.m.initializer])
+            self.do_reset = False
         #update vars
         gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient,gradient)}
         self.sess.run(self.update_op_g2+self.update_op_m, feed_dict=gradient_dict)
