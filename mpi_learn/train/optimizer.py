@@ -185,12 +185,12 @@ class Adam(RunningAverageOptimizer):
     @trace
     def setup_update_graph(self, weights_input):
         #self.weights = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
-        self.gradient = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
+        self.gradient = [ tf.placeholder(dtype=tf.float32, shape=w.shape, name="gradient") for w in weights_input ]
 
-        self.weights = [ tf.Variable(w, dtype=tf.float32) for w in weights_input ]
+        self.weights = [ tf.Variable(w, dtype=tf.float32, name="weights") for w in weights_input ]
 
-        self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in weights_input ]
-        self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32) for w in weights_input ]
+        self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32, name="running_g2") for w in weights_input ]
+        self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32, name="m") for w in weights_input ]
 
         updated_m = [
             tf.scalar_mul(1-self.beta_1, update) + tf.scalar_mul(self.beta_1, previous)
@@ -212,7 +212,7 @@ class Adam(RunningAverageOptimizer):
         ]
         #######################################
 
-        self.t_ph = tf.placeholder(tf.float32, shape=())
+        self.t_ph = tf.placeholder(tf.float32, shape=(), name="time")
 
         alpha_t = self.learning_rate * (1 - self.rho**self.t_ph)**(0.5) / (1 - self.beta_1**self.t_ph)
 
