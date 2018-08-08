@@ -160,7 +160,7 @@ class Adam(RunningAverageOptimizer):
     def __init__(self, learning_rate=0.001, beta_1=0.9, beta_2=0.999,
             epsilon=1e-8):
         super(Adam, self).__init__(rho=beta_2, epsilon=epsilon)
-        self.sess = tf.Session()
+        self.sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
         self.init_learning_rate = learning_rate
         self.init_beta_1 = beta_1
         self.reset()
