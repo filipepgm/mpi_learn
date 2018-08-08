@@ -225,6 +225,8 @@ class Adam(RunningAverageOptimizer):
             var.assign(updated)  for var, updated in zip(self.weights, self.new_weights)
         ]
 
+        writer = tf.summary.FileWriter("graph_log", self.sess.graph)
+
     @trace
     def apply_update(self, weights, gradient):
         if self.do_reset:
