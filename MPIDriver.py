@@ -169,6 +169,7 @@ if __name__ == '__main__':
     # Process 0 launches the training procedure
     if comm.Get_rank() == 0:
         print (algo)
+        print (manager.process.model.model.summary())
 
         t_0 = time()
         histories = manager.process.train() 
