@@ -6,6 +6,7 @@ import copy
 import pickle
 import os
 import tensorflow as tf
+from tensorflow.python.client import timeline
 
 from ..utils import weights_from_shapes
 from ..train.trace import Trace, trace
@@ -29,6 +30,11 @@ class Optimizer(object):
         d= open(fn,'wb')
         #pickle.dump(self, d) #FIXME re enable
         d.close()
+
+        tl = timeline.Timeline(self.run_metadata.step_stats)
+        ctf = tl.generate_chrome_trace_format()
+        with open('tf-timeline.json', 'w') as f:
+            f.write(ctf)
 
     def load(self, fn = 'algo_.pkl'):
         d = open(fn, 'rb')
@@ -161,6 +167,8 @@ class Adam(RunningAverageOptimizer):
             epsilon=1e-8):
         super(Adam, self).__init__(rho=beta_2, epsilon=epsilon)
         self.sess = tf.Session()
+        self.run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        self.run_metadata = tf.RunMetadata()
         self.init_learning_rate = learning_rate
         self.init_beta_1 = beta_1
         self.reset()
@@ -243,7 +251,8 @@ class Adam(RunningAverageOptimizer):
         Trace.end("feed_dict")
 
         Trace.begin("update_vars")
-        res = self.sess.run(self.update_op_g2+self.update_op_m + self.apply_weights, feed_dict=overall_dict)[-len(weights):]
+        res = self.sess.run(self.update_op_g2+self.update_op_m + self.apply_weights, feed_dict=overall_dict,
+            options=self.run_options, run_metadata=self.run_metadata)[-len(weights):]
         Trace.end("update_vars")
         
         self.t+=1
