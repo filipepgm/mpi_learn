@@ -184,7 +184,7 @@ class Adam(RunningAverageOptimizer):
 
     @trace
     def setup_update_graph(self, weights_input):
-        #self.weights = [ tf.placeholder(dtype=tf.float32, shape=w.shape) for w in weights_input ]
+        print ("AAAA Number of layers: ", len(weights_input))
         self.gradient = [ tf.placeholder(dtype=tf.float32, shape=w.shape, name="gradient") for w in weights_input ]
 
         self.weights = [ tf.Variable(w, dtype=tf.float32, name="weights") for w in weights_input ]
@@ -236,7 +236,7 @@ class Adam(RunningAverageOptimizer):
         #update vars
 
         Trace.begin("feed_dict")
-        gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient,gradient)}
+        gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient, gradient)}
         #weights_dict = {placeholder: value for placeholder, value in zip(self.weights,weights)}
 
         overall_dict = {self.t_ph: self.t, **gradient_dict}
