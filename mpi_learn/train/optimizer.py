@@ -247,6 +247,7 @@ class Adam(RunningAverageOptimizer):
             self.sess.run([v.initializer for v in self.running_g2]+[v.initializer for v in self.m]+[v.initializer for v in self.weights])
             self.do_reset = False
         #update vars
+        self.t+=1
 
         Trace.begin("feed_dict")
         gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient, gradient)}
@@ -261,7 +262,7 @@ class Adam(RunningAverageOptimizer):
             options=self.run_options, run_metadata=self.run_metadata)[-len(weights):]
         Trace.end("update_vars")
         
-        self.t+=1
+        
         #Trace.begin("get new weights")
         #res = self.sess.run(self.new_weights, feed_dict=overall_dict)
         #Trace.end("get new weights")
