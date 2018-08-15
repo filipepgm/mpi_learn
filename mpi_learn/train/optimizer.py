@@ -200,8 +200,11 @@ class Adam(RunningAverageOptimizer):
         self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32, name="running_g2") for w in weights_input ]
         self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32, name="m") for w in weights_input ]
 
+        tf_beta1 = tf.constant(self.beta_1, dtype=tf.float32)
+        tf_beta1_inv = tf.constant(1-self.beta_1, dtype=tf.float32)
+
         updated_m = [
-            tf.scalar_mul(1-self.beta_1, update) + tf.scalar_mul(self.beta_1, previous)
+            tf.scalar_mul(tf_beta1_inv, update) + tf.scalar_mul(tf_beta1, previous)
             for previous, update in zip(self.m, self.gradient)
         ]
 
@@ -220,12 +223,14 @@ class Adam(RunningAverageOptimizer):
         ]
         #######################################
 
-        self.t_ph = tf.placeholder(tf.float32, shape=(), name="time")
+        #self.t_ph = tf.placeholder(tf.float32, shape=(), name="time")
+        self.alpga_t_ph = tf.placeholder(tf.float32, shape=(), name="alpha_t")
 
-        alpha_t = self.learning_rate * (1 - self.rho**self.t_ph)**(0.5) / (1 - self.beta_1**self.t_ph)
+        #alpha_t = self.learning_rate * (1 - self.rho**self.t_ph)**(0.5) / (1 - self.beta_1**self.t_ph)
+        tf_epsilon = tf.constant(self.epsilon, dtype=tf.float32)
 
         self.new_weights = [
-            w - alpha_t * g / ( tf.square(g2) + self.epsilon )
+            tf.divide(w - tf.scalar_mul(self.alpga_t_ph, g), ( tf.square(g2) + tf_epsilon ))
             for w, g, g2 in zip(self.weights, updated_m, updated_running_g2)
         ]
 
@@ -247,7 +252,8 @@ class Adam(RunningAverageOptimizer):
         gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient, gradient)}
         #weights_dict = {placeholder: value for placeholder, value in zip(self.weights,weights)}
 
-        overall_dict = {self.t_ph: self.t, **gradient_dict}
+        alpha_t = self.learning_rate * (1 - self.rho**self.t)**(0.5) / (1 - self.beta_1**self.t)
+        overall_dict = {self.alpga_t_ph: alpha_t, **gradient_dict}
         Trace.end("feed_dict")
 
         Trace.begin("update_vars")
