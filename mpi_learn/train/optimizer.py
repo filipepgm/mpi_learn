@@ -213,7 +213,7 @@ class Adam(RunningAverageOptimizer):
 
         self.adam_op = self.tf_optimizer.apply_gradients(
             grads_and_vars=var_list,
-            global_step=tf.constant(1, dtype=tf.float32),
+            global_step=tf.Variable(1, dtype=tf.float32, name="time"),
             name="adam_op"
         )
 
