@@ -264,10 +264,11 @@ class Adam(RunningAverageOptimizer):
         if self.do_reset:
             self.setup_update_graph(weights)
             #self.sess.run([v.initializer for v in self.running_g2]+[v.initializer for v in self.m]+[v.initializer for v in self.weights])
-            self.sess.run([v.initializer for v in self.weights] + [self.tf_time.initializer, self.tf_optimizer._beta1_power.initializer, self.tf_optimizer._beta2_power.initializer] )
+            #self.sess.run([v.initializer for v in self.weights] + [self.tf_time.initializer, self.tf_optimizer._beta1_power.initializer, self.tf_optimizer._beta2_power.initializer] )
+            self.sess.run(tf.initialize_all_variables())
             self.do_reset = False
         #update vars
-        self.t+=1
+        self.t+=1   
 
         Trace.begin("feed_dict")
         gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient, gradient)}
