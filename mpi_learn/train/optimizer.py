@@ -270,7 +270,7 @@ class Adam(RunningAverageOptimizer):
         #update vars
         self.t+=1   
 
-        Trace.begin("feed_dict")
+        #Trace.begin("feed_dict")
         gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient, gradient)}
         #weights_dict = {placeholder: value for placeholder, value in zip(self.weights,weights)}
 
