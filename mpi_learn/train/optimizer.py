@@ -285,7 +285,7 @@ class Adam(RunningAverageOptimizer):
         Trace.end("update_vars")
         Trace.begin("get_weights")
         res = self.sess.run(self.weights)
-        Trace.begin("get_weights")
+        Trace.end("get_weights")
         
         #Trace.begin("get new weights")
         #res = self.sess.run(self.new_weights, feed_dict=overall_dict)
