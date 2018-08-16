@@ -211,9 +211,11 @@ class Adam(RunningAverageOptimizer):
 
         var_list = zip(self.gradient, self.weights)
 
+        self.tf_time = tf.Variable(1, dtype=tf.float32, name="time")
+
         self.adam_op = self.tf_optimizer.apply_gradients(
             grads_and_vars=var_list,
-            global_step=tf.Variable(1, dtype=tf.float32, name="time"),
+            global_step=self.tf_time,
             name="adam_op"
         )
 
@@ -262,7 +264,7 @@ class Adam(RunningAverageOptimizer):
         if self.do_reset:
             self.setup_update_graph(weights)
             #self.sess.run([v.initializer for v in self.running_g2]+[v.initializer for v in self.m]+[v.initializer for v in self.weights])
-            self.sess.run([v.initializer for v in self.weights])
+            self.sess.run([v.initializer for v in self.weights] + [self.tf_time.initializer] )
             self.do_reset = False
         #update vars
         self.t+=1
