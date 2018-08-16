@@ -31,10 +31,10 @@ class Optimizer(object):
         #pickle.dump(self, d) #FIXME re enable
         d.close()
 
-        tl = timeline.Timeline(self.run_metadata.step_stats)
-        ctf = tl.generate_chrome_trace_format()
-        with open('tf-timeline.json', 'w') as f:
-            f.write(ctf)
+        #tl = timeline.Timeline(self.run_metadata.step_stats)
+        #ctf = tl.generate_chrome_trace_format()
+        #with open('tf-timeline.json', 'w') as f:
+        #    f.write(ctf)
 
     def load(self, fn = 'algo_.pkl'):
         d = open(fn, 'rb')
