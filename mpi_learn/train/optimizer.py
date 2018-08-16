@@ -167,8 +167,8 @@ class Adam(RunningAverageOptimizer):
             epsilon=1e-8):
         super(Adam, self).__init__(rho=beta_2, epsilon=epsilon)
         self.sess = tf.Session()
-        self.run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-        self.run_metadata = tf.RunMetadata()
+        #self.run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        #self.run_metadata = tf.RunMetadata()
 
         
         self.tf_optimizer = tf.train.AdamOptimizer(
@@ -281,7 +281,7 @@ class Adam(RunningAverageOptimizer):
         Trace.begin("update_vars")
         #res = self.sess.run(self.update_op_g2+self.update_op_m + self.apply_weights, feed_dict=overall_dict,
         #    options=self.run_options, run_metadata=self.run_metadata)[-len(weights):]
-        self.sess.run(self.adam_op, feed_dict=gradient_dict, options=self.run_options, run_metadata=self.run_metadata)
+        self.sess.run(self.adam_op, feed_dict=gradient_dict)
         Trace.end("update_vars")
         
         
