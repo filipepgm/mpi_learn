@@ -169,6 +169,17 @@ class Adam(RunningAverageOptimizer):
         self.sess = tf.Session()
         self.run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
         self.run_metadata = tf.RunMetadata()
+
+        
+        self.tf_optimizer = tf.train.AdamOptimizer(
+            learning_rate=learning_rate,
+            beta1=beta_1,
+            beta2=beta_2,
+            epsilon=epsilon,
+            use_locking=False,
+            name='Adam'
+        )
+
         self.init_learning_rate = learning_rate
         self.init_beta_1 = beta_1
         self.reset()
@@ -192,60 +203,66 @@ class Adam(RunningAverageOptimizer):
 
     @trace
     def setup_update_graph(self, weights_input):
+
         print ("AAAA Number of layers: ", len(weights_input))
         self.gradient = [ tf.placeholder(dtype=tf.float32, shape=w.shape, name="gradient") for w in weights_input ]
 
         self.weights = [ tf.Variable(w, dtype=tf.float32, name="weights") for w in weights_input ]
 
-        self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32, name="running_g2") for w in weights_input ]
-        self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32, name="m") for w in weights_input ]
+        var_list = zip(self.gradient, self.weights)
 
-        tf_beta1 = tf.constant(self.beta_1, dtype=tf.float32)
-        tf_beta1_inv = tf.constant(1-self.beta_1, dtype=tf.float32)
+        self.adam_op = self.tf_optimizer.apply_gradients(
+            grads_and_vars=var_list,
+            global_step=1,
+            name="adam_op"
+        )
 
-        updated_m = [
-            tf.scalar_mul(tf_beta1_inv, update) + tf.scalar_mul(tf_beta1, previous)
-            for previous, update in zip(self.m, self.gradient)
-        ]
-
-        self.update_op_m = [
-            var.assign(updated)  for var, updated in zip(self.m, updated_m)
-        ]
+        #self.running_g2 = [ tf.Variable(np.zeros_like(w), dtype=tf.float32, name="running_g2") for w in weights_input ]
+        #self.m = [ tf.Variable(np.zeros_like(w), dtype=tf.float32, name="m") for w in weights_input ]
+        #tf_beta1 = tf.constant(self.beta_1, dtype=tf.float32)
+        #tf_beta1_inv = tf.constant(1-self.beta_1, dtype=tf.float32)
+        #updated_m = [
+        #    tf.scalar_mul(tf_beta1_inv, update) + tf.scalar_mul(tf_beta1, previous)
+        #    for previous, update in zip(self.m, self.gradient)
+        #]
+        #self.update_op_m = [
+        #    var.assign(updated)  for var, updated in zip(self.m, updated_m)
+        #]
 
         #######################################
-        updated_running_g2 = [
-            self.setup_running_average_square_np(old, new)
-            for old, new in zip(self.running_g2, self.gradient)
-        ]
+        #updated_running_g2 = [
+        #    self.setup_running_average_square_np(old, new)
+        #    for old, new in zip(self.running_g2, self.gradient)
+        #]
+#
+        #self.update_op_g2 = [
+        #    var.assign(updated)  for var, updated in zip(self.running_g2, updated_running_g2)
+        #]
+        ########################################
+#
+        ##self.t_ph = tf.placeholder(tf.float32, shape=(), name="time")
+        #self.alpga_t_ph = tf.placeholder(tf.float32, shape=(), name="alpha_t")
+#
+        ##alpha_t = self.learning_rate * (1 - self.rho**self.t_ph)**(0.5) / (1 - self.beta_1**self.t_ph)
+        #tf_epsilon = tf.constant(self.epsilon, dtype=tf.float32)
+#
+        #self.new_weights = [
+        #    tf.divide(w - tf.scalar_mul(self.alpga_t_ph, g), ( tf.square(g2) + tf_epsilon ))
+        #    for w, g, g2 in zip(self.weights, updated_m, updated_running_g2)
+        #]
 
-        self.update_op_g2 = [
-            var.assign(updated)  for var, updated in zip(self.running_g2, updated_running_g2)
-        ]
-        #######################################
-
-        #self.t_ph = tf.placeholder(tf.float32, shape=(), name="time")
-        self.alpga_t_ph = tf.placeholder(tf.float32, shape=(), name="alpha_t")
-
-        #alpha_t = self.learning_rate * (1 - self.rho**self.t_ph)**(0.5) / (1 - self.beta_1**self.t_ph)
-        tf_epsilon = tf.constant(self.epsilon, dtype=tf.float32)
-
-        self.new_weights = [
-            tf.divide(w - tf.scalar_mul(self.alpga_t_ph, g), ( tf.square(g2) + tf_epsilon ))
-            for w, g, g2 in zip(self.weights, updated_m, updated_running_g2)
-        ]
-
-        self.apply_weights = [
-            var.assign(updated)  for var, updated in zip(self.weights, self.new_weights)
-        ]
+        #self.apply_weights = [
+        #    var.assign(updated)  for var, updated in zip(self.weights, self.new_weights)
+        #]
 
         writer = tf.summary.FileWriter("graph_log", self.sess.graph)
 
     @trace
     def apply_update(self, weights, gradient):
-        if self.do_reset:
-            self.setup_update_graph(weights)
-            self.sess.run([v.initializer for v in self.running_g2]+[v.initializer for v in self.m]+[v.initializer for v in self.weights])
-            self.do_reset = False
+        #if self.do_reset:
+        #    self.setup_update_graph(weights)
+        #    self.sess.run([v.initializer for v in self.running_g2]+[v.initializer for v in self.m]+[v.initializer for v in self.weights])
+        #    self.do_reset = False
         #update vars
         self.t+=1
 
@@ -253,20 +270,21 @@ class Adam(RunningAverageOptimizer):
         gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient, gradient)}
         #weights_dict = {placeholder: value for placeholder, value in zip(self.weights,weights)}
 
-        alpha_t = self.learning_rate * (1 - self.rho**self.t)**(0.5) / (1 - self.beta_1**self.t)
-        overall_dict = {self.alpga_t_ph: alpha_t, **gradient_dict}
-        Trace.end("feed_dict")
+        #alpha_t = self.learning_rate * (1 - self.rho**self.t)**(0.5) / (1 - self.beta_1**self.t)
+        #overall_dict = {self.alpga_t_ph: alpha_t, **gradient_dict}
+        #Trace.end("feed_dict")
 
         Trace.begin("update_vars")
-        res = self.sess.run(self.update_op_g2+self.update_op_m + self.apply_weights, feed_dict=overall_dict,
-            options=self.run_options, run_metadata=self.run_metadata)[-len(weights):]
+        #res = self.sess.run(self.update_op_g2+self.update_op_m + self.apply_weights, feed_dict=overall_dict,
+        #    options=self.run_options, run_metadata=self.run_metadata)[-len(weights):]
+        self.sess.run(self.adam_op, feed_dict=gradient_dict, options=self.run_options, run_metadata=self.run_metadata)
         Trace.end("update_vars")
         
         
         #Trace.begin("get new weights")
         #res = self.sess.run(self.new_weights, feed_dict=overall_dict)
         #Trace.end("get new weights")
-        return res
+        return weights #TODO FIXME
 
 
 class AdaDelta(RunningAverageOptimizer):
