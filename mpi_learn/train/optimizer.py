@@ -264,7 +264,7 @@ class Adam(RunningAverageOptimizer):
         if self.do_reset:
             self.setup_update_graph(weights)
             #self.sess.run([v.initializer for v in self.running_g2]+[v.initializer for v in self.m]+[v.initializer for v in self.weights])
-            self.sess.run([v.initializer for v in self.weights] + [self.tf_time.initializer] )
+            self.sess.run([v.initializer for v in self.weights] + [self.tf_time.initializer, self.tf_optimizer._beta1_power.initializer, self.tf_optimizer._beta2_power.initializer] )
             self.do_reset = False
         #update vars
         self.t+=1
