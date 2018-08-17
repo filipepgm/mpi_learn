@@ -502,6 +502,7 @@ class MPIWorker(MPIProcess):
         Trace.begin("train")
         self.check_sanity()
 
+        print ("MPIWorker {0} waiting".format(self.ranks))
         self.await_signal_from_parent()
 
         # periodically check this request to see if the parent has told us to stop training
