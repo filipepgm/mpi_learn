@@ -726,9 +726,12 @@ class MPIMaster(MPIProcess):
             When finished, signal the parent process that training is complete.
         """
         Trace.begin("train")
+        print ("MPIMaster {0} START training".format(self.ranks))
         self.start_time = time.time()
         self.check_sanity()
+        print ("MPIMaster {0} sane".format(self.ranks))
         self.bcast_weights( comm=self.child_comm )
+        print ("MPIMaster {0} sent weights".format(self.ranks))
         self.signal_children()
 
         status = MPI.Status()
