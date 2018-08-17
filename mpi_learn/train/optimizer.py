@@ -4,6 +4,8 @@ import numpy as np
 import copy
 import pickle
 import os
+import tensorflow as tf
+from ..train.trace import Trace, trace
 
 from ..utils import weights_from_shapes
 
@@ -120,6 +122,73 @@ class RunningAverageOptimizer(Optimizer):
             value: numpy array containing the running average of squares"""
         return np.sqrt( np.add(value, self.epsilon) )
 
+class AdamTF(Optimizer):
+    """Adam optimizer.
+        Wrapper arounf tensorflow's implementation of adam.
+    """
+    def __init__(self, learning_rate=0.001, beta_1=0.9, beta_2=0.999,
+            epsilon=1e-8):
+        self.sess = None
+
+        self.learning_rate = learning_rate
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+        self.epsilon = epsilon
+        self.t = 0
+
+        self.reset()
+    
+    def reset(self):
+        if self.sess:
+            self.sess.close() #free resources from previous execution
+
+        self.sess = tf.Session()
+        self.do_reset = True
+
+        
+    def setup_update(self, weights):
+        """Setup the tf computational graph. Should be run once for each model
+            Receives the weights in order to know the shapes to use
+        """
+        self.gradient = [ tf.placeholder(dtype=tf.float32, shape=w.shape, name="gradient") for w in weights ]
+
+        self.weights = [ tf.Variable(w, dtype=tf.float32, name="weights") for w in weights ]
+
+        var_list = zip(self.gradient, self.weights)
+
+        self.tf_time = tf.Variable(1, dtype=tf.float32, name="time")
+
+        self.tf_optimizer = tf.train.AdamOptimizer(
+            learning_rate=self.learning_rate,
+            beta1=self.beta_1,
+            beta2=self.beta_2,
+            epsilon=self.epsilon,
+            use_locking=False,
+            name='Adam'
+        )
+
+        self.adam_op = self.tf_optimizer.apply_gradients(
+            grads_and_vars=var_list,
+            global_step=self.tf_time,
+            name="adam_op"
+        )
+    
+    def apply_update(self, weights, gradient):
+        if self.do_reset:
+            self.setup_update(weights)
+            self.sess.run(tf.initialize_all_variables()) #FIXME deprecated
+
+        gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient, gradient)}
+
+        Trace.begin("tf_adam")
+        self.sess.run(self.adam_op, feed_dict=gradient_dict)
+        Trace.end("tf_adam")
+
+        Trace.begin("tf_get_weights")
+        res = self.sess.run(self.weights)
+        Trace.end("tf_get_weights")
+
+        return res
 
 class Adam(RunningAverageOptimizer):
     """Adam optimizer.
@@ -293,6 +362,7 @@ def get_optimizer(name):
             'adadelta': AdaDelta,
             'rmsprop':  RMSProp,
             'adam':     Adam,
+            'adamtf':   AdamTF,
             }
     return lookup[name]
 
