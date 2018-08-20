@@ -137,6 +137,12 @@ class AdamTF(Optimizer):
         self.t = 0
 
         self.reset()
+
+    def save(self, fn = None):
+        if fn is None:
+            fn = 'master-opt-{}.algo'.format( os.getpid())
+        print ("Can't save AdamTF - file %s" % fn)
+        #TODO
     
     def reset(self):
         if self.sess:
