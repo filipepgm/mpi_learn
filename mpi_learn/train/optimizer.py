@@ -177,6 +177,7 @@ class AdamTF(Optimizer):
         if self.do_reset:
             self.setup_update(weights)
             self.sess.run(tf.initialize_all_variables()) #FIXME deprecated
+            self.do_reset = False
 
         gradient_dict = {placeholder: value for placeholder, value in zip(self.gradient, gradient)}
 
