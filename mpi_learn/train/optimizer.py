@@ -4,7 +4,6 @@ import numpy as np
 import copy
 import pickle
 import os
-import tensorflow as tf
 from ..train.trace import Trace, trace
 
 from ..utils import weights_from_shapes
@@ -145,6 +144,8 @@ class AdamTF(Optimizer):
         print ("Can't save AdamTF - file %s" % fn)
     
     def reset(self):
+        import tensorflow as tf
+
         if self.sess:
             self.sess.close() #free resources from previous execution
 
@@ -153,6 +154,8 @@ class AdamTF(Optimizer):
 
         
     def setup_update(self, weights):
+        import tensorflow as tf
+
         """Setup the tf computational graph. Should be run once for each model
             Receives the weights in order to know the shapes to use
         """
@@ -180,6 +183,8 @@ class AdamTF(Optimizer):
         )
     
     def apply_update(self, weights, gradient):
+        import tensorflow as tf
+
         if self.do_reset:
             self.setup_update(weights)
             self.sess.run(tf.global_variables_initializer())
