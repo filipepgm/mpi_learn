@@ -180,6 +180,7 @@ if __name__ == '__main__':
         manager.process.record_details(json_name,
                                        meta={"args":vars(args)})            
         print ("Wrote trial information to {0}".format(json_name))
+        manager.process.algo.optimizer.close()
 
     comm.barrier()
     if args.trace: Trace.collect(clean=True)
