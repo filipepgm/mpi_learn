@@ -142,7 +142,6 @@ class AdamTF(Optimizer):
         if fn is None:
             fn = 'master-opt-{}.algo'.format( os.getpid())
         print ("Can't save AdamTF - file %s" % fn)
-        #TODO
     
     def reset(self):
         import tensorflow as tf
