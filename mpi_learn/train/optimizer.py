@@ -142,6 +142,7 @@ class AdamTF(Optimizer):
         if fn is None:
             fn = 'master-opt-{}.algo'.format( os.getpid())
         print ("Can't save AdamTF - file %s" % fn)
+        #TODO
     
     def reset(self):
         import tensorflow as tf
@@ -201,11 +202,6 @@ class AdamTF(Optimizer):
         Trace.end("tf_get_weights")
 
         return res
-    
-    def close(self):
-        if self.sess:
-            self.sess.close()
-
 
 class Adam(RunningAverageOptimizer):
     """Adam optimizer.
